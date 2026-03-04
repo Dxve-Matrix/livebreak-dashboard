@@ -1,13 +1,25 @@
 {
-  "name": "dashboard-live",
+  "name": "livebreak-dashboard",
   "version": "1.0.0",
   "main": "main.js",
   "scripts": {
-    "start": "electron ."
+    "start": "electron .",
+    "dist": "electron-builder"
   },
-  "author": "",
-  "license": "ISC",
   "dependencies": {
     "electron": "^40.6.1"
+  },
+  "devDependencies": {
+    "electron-builder": "^24.13.3"
+  },
+  "build": {
+    "appId": "com.livebreak.dashboard",
+    "productName": "LiveBreak Dashboard",
+    "files": [
+      "**/*"
+    ],
+    "mac": {
+      "target": "dmg"
+    }
   }
 }
