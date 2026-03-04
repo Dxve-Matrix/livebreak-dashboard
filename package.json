@@ -1,15 +1,15 @@
 {
   "name": "livebreak-dashboard",
   "version": "1.0.0",
+  "description": "LiveBreak Shopify Dashboard",
+  "author": "Dxve-Matrix",
   "main": "main.js",
   "scripts": {
     "start": "electron .",
     "dist": "electron-builder"
   },
-  "dependencies": {
-    "electron": "^40.6.1"
-  },
   "devDependencies": {
+    "electron": "^40.6.1",
     "electron-builder": "^24.13.3"
   },
   "build": {
