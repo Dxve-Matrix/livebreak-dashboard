@@ -1,0 +1,13 @@
+{
+  "name": "dashboard-live",
+  "version": "1.0.0",
+  "main": "main.js",
+  "scripts": {
+    "start": "electron ."
+  },
+  "author": "",
+  "license": "ISC",
+  "dependencies": {
+    "electron": "^40.6.1"
+  }
+}

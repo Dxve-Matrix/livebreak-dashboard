@@ -1,0 +1,399 @@
+<!DOCTYPE html>
+<html>
+
+<head>
+    <meta charset="UTF-8">
+    <title>LiveBreak Dashboard</title>
+
+
+    <style>
+        /* RESET */
+* {
+    box-sizing: border-box;
+}
+
+body {
+    background: radial-gradient(circle at top, #1a1a24, #0f0f14 60%);
+    color: #f1f1f1;
+    font-family: Inter, system-ui, -apple-system, sans-serif;
+    margin: 0;
+    padding: 30px 15px;
+}
+
+/* CONTAINER */
+body > * {
+    max-width: 1200px;
+    margin-left: auto;
+    margin-right: auto;
+}
+
+/* TITLE */
+h1 {
+    font-size: 32px;
+    margin-bottom: 25px;
+    letter-spacing: 1px;
+}
+
+/* BUTTONS */
+button {
+    cursor: pointer;
+    border: none;
+    border-radius: 10px;
+    font-weight: 600;
+    transition: all .2s ease;
+}
+
+.filter-btn {
+    background: linear-gradient(90deg,#ff9800,#ff6a00);
+    color: black;
+    padding: 10px 18px;
+}
+
+.filter-btn:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 5px 15px rgba(255, 152, 0, 0.3);
+}
+
+.refresh-btn {
+    background: #1e1e28;
+    color: #fff;
+    padding: 10px 18px;
+}
+
+.refresh-btn:hover {
+    background: #2c2c38;
+}
+
+/* TABLE */
+#ordersTable {
+    width: 100%;
+    border-collapse: collapse;
+    margin-top: 30px;
+    background: #15151d;
+    border-radius: 14px;
+    overflow: hidden;
+    box-shadow: 0 0 30px rgba(0,0,0,0.4);
+}
+
+thead {
+    background: linear-gradient(90deg,#1c1c27,#23233a);
+    position: sticky;
+    top: 0;
+    z-index: 10;
+}
+
+th {
+    padding: 16px 14px;
+    font-size: 13px;
+    letter-spacing: 1px;
+    text-transform: uppercase;
+    opacity: .7;
+}
+
+td {
+    padding: 14px;
+    font-size: 14px;
+    border-bottom: 1px solid #222;
+}
+
+tbody tr {
+    transition: background .2s ease;
+}
+
+tbody tr:hover {
+    background: #1c1c27;
+}
+
+/* STATUS */
+.status-span {
+    padding: 6px 12px;
+    border-radius: 20px;
+    font-size: 12px;
+    font-weight: 700;
+}
+
+.status-open {
+    background: #c62828;
+}
+
+.status-pending {
+    background: #2e7d32;
+}
+
+/* ACTION BUTTON */
+.toggle-btn {
+    background: #252535;
+    color: white;
+    padding: 8px 12px;
+    border-radius: 8px;
+}
+
+.toggle-btn:hover {
+    background: #32324a;
+}
+
+/* PRODUCTS ROW */
+.products-row {
+    background: #12121a;
+}
+
+.products-container {
+    display: flex;
+    gap: 20px;
+    flex-wrap: wrap;
+    padding: 15px 5px;
+}
+
+.product-mini {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+    background: #181822;
+    padding: 10px;
+    border-radius: 10px;
+    min-width: 220px;
+}
+
+.product-mini img {
+    width: 55px;
+    height: 75px;
+    object-fit: contain;
+    background: white;
+    border-radius: 8px;
+}
+
+/* BADGES */
+.badge-sealed,
+.badge-break {
+    display: inline-block;
+    font-size: 11px;
+    padding: 4px 10px;
+    border-radius: 20px;
+    margin-top: 4px;
+    font-weight: 600;
+}
+
+.badge-sealed {
+    background: #1f8f3a;
+}
+
+.badge-break {
+    background: #c62828;
+}
+
+/* RESPONSIVE */
+
+@media (max-width: 900px) {
+
+    #ordersTable,
+    thead,
+    tbody,
+    th,
+    td,
+    tr {
+        display: block;
+        width: 100%;
+    }
+
+    thead {
+        display: none;
+    }
+
+    tbody tr {
+        background: #181822;
+        margin-bottom: 15px;
+        padding: 15px;
+        border-radius: 12px;
+    }
+
+    td {
+        border: none;
+        padding: 6px 0;
+        font-size: 13px;
+    }
+
+    td::before {
+        content: attr(data-label);
+        font-weight: 600;
+        display: block;
+        font-size: 11px;
+        opacity: .6;
+        margin-bottom: 3px;
+        text-transform: uppercase;
+    }
+
+}
+    </style>
+
+
+</head>
+
+<body>
+
+    <h1>LiveBreak Dashboard</h1>
+    
+    <button class="refresh-btn" onclick="loadOrders()">
+        🔄 Aggiorna
+    </button>
+
+    <table id="ordersTable" style="width:100%; border-collapse: collapse;">
+        <thead>
+            <tr style="background:#181822;">
+                <th style="padding:12px;">Ordine</th>
+                <th>Cliente</th>
+                <th>Email</th>
+                <th>Totale</th>
+                <th>Data</th>
+                <th>Stato</th>
+                <th>Azioni</th>
+            </tr>
+        </thead>
+        <tbody></tbody>
+    </table>
+
+    <script>
+
+        let showOnlyLive = false;
+
+        function toggleProducts(id) {
+                const row = document.getElementById("products-" + id);
+                row.style.display = row.style.display === "none" ? "table-row" : "none";
+            }
+
+        async function loadOrders() {
+
+                const refreshBtn = document.querySelector(".refresh-btn");
+                if (refreshBtn) {
+                    refreshBtn.innerText = "⏳ Aggiornamento...";
+                    refreshBtn.disabled = true;
+                }
+
+                try {
+                    const res = await fetch("/api/orders");
+                    const data = await res.json();
+
+                    const tbody = document.querySelector("#ordersTable tbody");
+                    tbody.innerHTML = "";
+
+                    data.orders.forEach(order => {
+
+                        const hasLiveProduct = order.line_items.some(li => {
+                            const variant = (li.variant_title || "").toLowerCase();
+                            return variant.includes("box break") ||
+                                variant.includes("live") ||
+                                variant.includes("aperto");
+                        });
+
+                        if (!hasLiveProduct) return;
+
+                        const tr = document.createElement("tr");
+                        tr.id = `row-${order.id}`;
+
+                        tr.innerHTML = `
+                <td>#${order.name}</td>
+                <td>${order.customer_name || ""}</td>
+                <td>${order.customer_email || ""}</td>
+                <td>€ ${order.total_price || ""}</td>
+                <td>${new Date(order.created_at).toLocaleString()}</td>
+                <td>
+                    <span class="status-span ${order.is_opened ? 'status-open' : 'status-pending'}"
+                        style="padding:6px 10px;border-radius:6px;font-size:12px;">
+                        ${order.is_opened ? 'APERTO' : 'DA APRIRE'}
+                    </span>
+                </td>
+                <td>
+                    <button onclick="toggleProducts('${order.id}')">Prodotti</button>
+                    <button class="toggle-btn"
+                        onclick="toggleOpened(${order.id}, ${order.is_opened})">
+                        ${order.is_opened ? 'Chiudi' : 'Apri'}
+                    </button>
+                </td>
+            `;
+
+                        tbody.appendChild(tr);
+
+                        // Riga nascosta prodotti
+                        const productsRow = document.createElement("tr");
+                        productsRow.id = "products-" + order.id;
+                        productsRow.className = "products-row";
+                        productsRow.style.display = "none";
+
+                        let productsHTML = `<td colspan="7">
+                <div class="products-container">`;
+
+                        order.line_items.forEach(li => {
+
+                            const variant = (li.variant_title || "").toLowerCase();
+
+                            const isBoxBreak = variant.includes("box break") ||
+                                variant.includes("live") ||
+                                variant.includes("aperto");
+
+                            const badgeClass = isBoxBreak ? "badge-break" : "badge-sealed";
+                            const badgeText = isBoxBreak
+                                ? "BOX BREAK (LIVE – NO RESO)"
+                                : "SEALED";
+
+                            productsHTML += `
+    <div class="product-mini">
+        ${li.image
+                                    ? `<img src="${li.image}">`
+                                    : `<div style="width:50px;height:70px;background:#222;border-radius:6px;"></div>`
+                                }
+        <div>
+            <div style="font-weight:600;">${li.title}</div>
+            <div class="${badgeClass}">${badgeText}</div>
+        </div>
+    </div>
+`;
+                        });
+
+                        productsHTML += `
+                </div>
+            </td>`;
+
+                        productsRow.innerHTML = productsHTML;
+                        tbody.appendChild(productsRow);
+                    });
+
+                } catch (err) {
+                    console.error("Errore caricamento ordini:", err);
+                }
+
+                if (refreshBtn) {
+                    refreshBtn.innerText = "🔄 Aggiorna";
+                    refreshBtn.disabled = false;
+                }
+            }
+            async function toggleOpened(id, isOpened) {
+
+                    const row = document.querySelector(`#row-${id}`);
+                    const statusSpan = row.querySelector(".status-span");
+                    const button = row.querySelector(".toggle-btn");
+
+                    const newState = !isOpened;
+
+                    // 🔥 1️⃣ Aggiorno UI subito (istantaneo)
+                    statusSpan.innerText = newState ? "APERTO" : "DA APRIRE";
+                    statusSpan.className = "status-span " + (newState ? "status-open" : "status-pending");
+
+                    button.innerText = newState ? "Chiudi" : "Apri";
+                    button.setAttribute("onclick", `toggleOpened(${id}, ${newState})`);
+
+                    // 🔥 2️⃣ Backend in background (non blocca UI)
+                    fetch(newState ? "/api/mark_opened" : "/api/unmark_opened", {
+                        method: "POST",
+                        headers: { "Content-Type": "application/json" },
+                        body: JSON.stringify({ order_id: id })
+                    }).catch(err => {
+                        console.error("Errore aggiornamento stato:", err);
+                    });
+                }
+
+        loadOrders();
+
+    </script>
+
+</body>
+
+</html>
